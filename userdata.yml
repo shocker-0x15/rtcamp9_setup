@@ -1,0 +1,42 @@
+version: 1.0
+tasks:
+- task: executeScript
+  inputs:
+  - frequency: once
+    type: powershell
+    runAs: admin
+    content: |-
+      Write-Output "Start to install miscellaneous things."
+
+      Invoke-Expression "& {$(Invoke-RestMethod get.scoop.sh)} -RunAsAdmin"
+      scoop install git
+      scoop update
+      scoop bucket add extras
+
+      # scoop install ffmpeg
+      scoop install python
+
+      pip install numpy
+      pip install scipy
+      pip install Pillow
+
+      Write-Output "Finished to install miscellaneous things."
+
+      $InstType = (Invoke-WebRequest -Uri "http://169.254.169.254/latest/meta-data/instance-type").Content
+      if ($InstType -eq "g4dn.xlarge") {
+        # pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+
+        # 結果の安定化のためにGPUクロックを固定する。
+        # https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/optimize_gpu.html
+        $err = (Start-Process -FilePath nvidia-smi -ArgumentList "-ac","5001,1590" -Wait -NoNewWindow -PassThru).ExitCode
+        if ($err -ne 0) {
+            Write-Error "Failed to fix GPU clock."
+        }
+        else {
+          Write-Output "Fixed GPU clock."
+        }
+      }
+      else {
+        Write-Output "This is a CPU instance."
+      }
+- task: enableOpenSsh
