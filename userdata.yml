@@ -14,7 +14,7 @@ tasks:
       scoop bucket add extras
 
       # scoop install ffmpeg
-      scoop install python
+      scoop install python@3.11.4
 
       pip install numpy
       pip install scipy
@@ -30,7 +30,7 @@ tasks:
         # https://docs.aws.amazon.com/ja_jp/AWSEC2/latest/UserGuide/optimize_gpu.html
         $err = (Start-Process -FilePath nvidia-smi -ArgumentList "-ac","5001,1590" -Wait -NoNewWindow -PassThru).ExitCode
         if ($err -ne 0) {
-            Write-Error "Failed to fix GPU clock."
+          Write-Error "Failed to fix GPU clock."
         }
         else {
           Write-Output "Fixed GPU clock."
