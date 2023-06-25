@@ -1,0 +1,9 @@
+[submodule "ext/stb"]
+	path = ext/stb
+	url = https://github.com/nothings/stb.git
+[submodule "ext/asio"]
+	path = ext/asio
+	url = https://github.com/chriskohlhoff/asio.git
+[submodule "ext/fpng"]
+	path = ext/fpng
+	url = https://github.com/richgel999/fpng.git

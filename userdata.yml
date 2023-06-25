@@ -16,6 +16,7 @@ tasks:
       # scoop install ffmpeg
       scoop install python@3.11.4
 
+      pip install paramiko
       pip install numpy
       pip install scipy
       pip install Pillow

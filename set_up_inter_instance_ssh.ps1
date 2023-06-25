@@ -3,17 +3,17 @@ param (
     [Parameter(Mandatory=$true)]
     [string]$privateKey,
 
+    # インスタンス0のアドレス
+    [Parameter(Mandatory=$true)]
+    [string]$instPublicAddress0,
+    [Parameter(Mandatory=$true)]
+    [string]$instPrivateAddress0,
+
     # インスタンス1のアドレス
     [Parameter(Mandatory=$true)]
     [string]$instPublicAddress1,
     [Parameter(Mandatory=$true)]
-    [string]$instPrivateAddress1,
-
-    # インスタンス2のアドレス
-    [Parameter(Mandatory=$true)]
-    [string]$instPublicAddress2,
-    [Parameter(Mandatory=$true)]
-    [string]$instPrivateAddress2
+    [string]$instPrivateAddress1
 )
 
 $ec2UserName = "administrator"
@@ -60,5 +60,5 @@ function genAndAppendPublicKey {
     ssh -i ${privateKey} ${ec2UserName}@${clientInstPublicAddress} ${sshCommand}
 }
 
-genAndAppendPublicKey ${instPublicAddress1} ${instPublicAddress2} ${instPrivateAddress2}
-genAndAppendPublicKey ${instPublicAddress2} ${instPublicAddress1} ${instPrivateAddress1}
+genAndAppendPublicKey ${instPublicAddress0} ${instPublicAddress1} ${instPrivateAddress1}
+genAndAppendPublicKey ${instPublicAddress1} ${instPublicAddress0} ${instPrivateAddress0}
