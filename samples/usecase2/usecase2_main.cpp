@@ -11,7 +11,7 @@
 int32_t main(int32_t argc, const char* argv[]) {
     // レンダラー起動時間を取得。
     using clock = std::chrono::high_resolution_clock;
-    clock::time_point appStartTp = clock::now();
+    const clock::time_point appStartTp = clock::now();
 
     uint32_t startFrameIndex = 0;
     uint32_t endFrameIndex = 0;
@@ -32,7 +32,7 @@ int32_t main(int32_t argc, const char* argv[]) {
         }
     }
 
-    if (endFrameIndex <= startFrameIndex) {
+    if (endFrameIndex < startFrameIndex) {
         printf("Invalid frame range.\n");
         return -1;
     }
@@ -53,7 +53,7 @@ int32_t main(int32_t argc, const char* argv[]) {
     std::vector<RGBA> pixels(height * width);
 
     for (uint32_t frameIndex = startFrameIndex; frameIndex <= endFrameIndex; ++frameIndex) {
-        clock::time_point frameStartTp = clock::now();
+        const clock::time_point frameStartTp = clock::now();
         printf("Frame %u ... ", frameIndex);
 
         // 高度なレンダリング...
@@ -71,9 +71,9 @@ int32_t main(int32_t argc, const char* argv[]) {
         }
 
         // 起動からの時刻とフレーム時間を計算。
-        clock::time_point now = clock::now();
-        clock::duration frameTime = now - frameStartTp;
-        clock::duration totalTime = now - appStartTp;
+        const clock::time_point now = clock::now();
+        const clock::duration frameTime = now - frameStartTp;
+        const clock::duration totalTime = now - appStartTp;
         printf(
             "Done: %.3f [ms] (total: %.3f [s])\n",
             std::chrono::duration_cast<std::chrono::microseconds>(frameTime).count() * 1e-3f,
