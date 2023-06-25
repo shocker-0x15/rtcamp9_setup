@@ -16,6 +16,7 @@ scoop bucket add extras
 
 scoop install python
 
+pip install paramiko
 pip install numpy
 pip install scipy
 pip install Pillow

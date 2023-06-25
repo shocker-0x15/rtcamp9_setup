@@ -37,3 +37,6 @@ $acl | Set-Acl -Path $administratorsKeyPath
 
 # デフォルトシェルをPowershellに変更。
 New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
+
+# 異なるインスタンス上のアプリケーション間で直接通信する際のポートを許可しておく。
+New-NetFirewallRule -DisplayName 'RTCamp9 App to App' -Profile 'Any' -Direction 'Inbound' -Action 'Allow' -Protocol 'TCP' -LocalPort 12345
