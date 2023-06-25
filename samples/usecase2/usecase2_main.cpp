@@ -9,6 +9,7 @@
 #include "fpng.h"
 
 int32_t main(int32_t argc, const char* argv[]) {
+    // レンダラー起動時間を取得。
     using clock = std::chrono::high_resolution_clock;
     clock::time_point appStartTp = clock::now();
 
@@ -50,9 +51,13 @@ int32_t main(int32_t argc, const char* argv[]) {
     constexpr uint32_t width = 256;
     constexpr uint32_t height = 256;
     std::vector<RGBA> pixels(height * width);
+
     for (uint32_t frameIndex = startFrameIndex; frameIndex <= endFrameIndex; ++frameIndex) {
         clock::time_point frameStartTp = clock::now();
         printf("Frame %u ... ", frameIndex);
+
+        // 高度なレンダリング...
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
         for (int y = 0; y < height; ++y) {
             for (int x = 0; x < width; ++x) {
                 RGBA v;
@@ -64,8 +69,8 @@ int32_t main(int32_t argc, const char* argv[]) {
                 pixels[idx] = v;
             }
         }
-        // 高度なレンダリング...
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        // 起動からの時刻とフレーム時間を計算。
         clock::time_point now = clock::now();
         clock::duration frameTime = now - frameStartTp;
         clock::duration totalTime = now - appStartTp;
@@ -74,6 +79,7 @@ int32_t main(int32_t argc, const char* argv[]) {
             std::chrono::duration_cast<std::chrono::microseconds>(frameTime).count() * 1e-3f,
             std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() * 1e-3f);
 
+        // 3桁連番で画像出力。
         char filename[256];
         sprintf_s(filename, "%03u.png", frameIndex);
         fpng_encode_image_to_file(filename, pixels.data(), width, height, 4, 0);
