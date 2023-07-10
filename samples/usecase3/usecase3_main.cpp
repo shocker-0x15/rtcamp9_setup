@@ -5,6 +5,7 @@
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include <deque>
 #include <string_view>
 #include <chrono>
 #include <thread>
@@ -18,7 +19,7 @@
 #include <asio.hpp>
 
 static int32_t runClient(const std::string &serverIP, const std::string &serverPort);
-static int32_t runServer(const uint32_t port);
+static int32_t runServer(const std::string &serverPort);
 
 using hires_clock = std::chrono::high_resolution_clock;
 
@@ -66,7 +67,7 @@ int32_t main(int32_t argc, const char* argv[]) {
             return -1;
         }
         printf("Run as a server.\n");
-        runServer(static_cast<uint32_t>(atoi(serverPort.c_str())));
+        runServer(serverPort);
     }
     else {
         printf("Run as a client.\n");
@@ -433,7 +434,7 @@ public:
 class Server {
     ServerState m_state;
     asio::ip::tcp::acceptor m_acceptor;
-    std::vector<RenderTask> m_renderTasks;
+    std::deque<RenderTask> m_renderTasks;
     uint32_t m_nextSessionID;
 
     void registerAccept() {
@@ -480,8 +481,8 @@ public:
             m_acceptor.cancel();
         }
         else {
-            task = m_renderTasks.back();
-            m_renderTasks.pop_back();
+            task = m_renderTasks.front();
+            m_renderTasks.pop_front();
         }
         return task;
     }
@@ -562,24 +563,24 @@ void Session::registerCommunication() {
 
 
 
-void runLocalClient(std::promise<int32_t> &ret) {
-    ret.set_value(runClient("127.0.0.1", "12345"));
+void runLocalClient(std::promise<int32_t> &ret, const std::string &serverPort) {
+    ret.set_value(runClient("127.0.0.1", serverPort));
 }
 
 
 
-int32_t runServer(const uint32_t port) {
+int32_t runServer(const std::string &serverPort) {
     using asio::ip::tcp;
 
     try {
         printf("Start server.\n");
         asio::io_context ioContext;
-        Server server(ioContext, port);
+        Server server(ioContext, static_cast<uint32_t>(atoi(serverPort.c_str())));
 
         // サーバーPCもクライアントとしてのスレッドを起動する。
         std::promise<int32_t> promLocalClient;
         std::future<int32_t> futLocalClient = promLocalClient.get_future();
-        std::thread localClient(runLocalClient, std::ref(promLocalClient));
+        std::thread localClient(runLocalClient, std::ref(promLocalClient), serverPort);
 
         ioContext.run();
         printf("Quit server.\n");
