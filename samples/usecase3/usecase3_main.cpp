@@ -80,8 +80,8 @@ int32_t main(int32_t argc, const char* argv[]) {
 
 
 enum class MessageType {
-    SessionID,
-    ServerStateRequest = 0,
+    SessionID = 0,
+    ServerStateRequest,
     ServerState,
     RenderTaskRequest,
     RenderTask,
@@ -94,7 +94,7 @@ struct MessageHeader {
 };
 
 enum class ServerState {
-    PreparingData,
+    PreparingData = 0,
     DataReady,
     Finishing,
     Unknown,
