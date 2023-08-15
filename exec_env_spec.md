@@ -23,7 +23,7 @@
 提出物の仕様は以下の構造とします。`<root directory>` をzipファイルに圧縮したものを提出してください。
 
 ```
-name_(cpu|gpu) ... 参加者名とインスタンスタイプ(cpu or gpu)
+<root directory> ... 名前は参加者名とインスタンスタイプから name_(cpu|gpu) とする
 ├─ run.ps1 ... 実行開始スクリプト
 ├─ fps.txt ... 動画ファイルのfpsの数字だけを書き込む
 ├─ ***.exe ... 実行ファイル
