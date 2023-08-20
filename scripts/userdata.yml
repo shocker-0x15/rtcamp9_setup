@@ -13,7 +13,7 @@ tasks:
       scoop update
       scoop bucket add extras
 
-      # scoop install ffmpeg
+      scoop install ffmpeg
       scoop install python@3.11.4
 
       pip install paramiko
