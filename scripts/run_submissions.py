@@ -67,10 +67,17 @@ def run():
 
     ssh.close()
 
+
+
     errors = {}
     for entry in submission_dir.iterdir():
         if not entry.is_file():
             continue
+
+        ssh = paramiko.SSHClient()
+        key = paramiko.RSAKey(filename=key_path)
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(secondary_priv_ip, username='administrator', pkey=key)
 
         # zipをホームディレクトリに展開。
         with zipfile.ZipFile(entry, 'r') as zip_ref:
@@ -101,11 +108,6 @@ def run():
         img_dir = result_dir / ('images_' + working_dir.name)
         img_dir.mkdir(exist_ok=True)
 
-        ssh = paramiko.SSHClient()
-        key = paramiko.RSAKey(filename=key_path)
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(secondary_priv_ip, username='administrator', pkey=key)
-
         # リモートPCでzipをホームディレクトリに展開。
         r_cmd = 'Expand-Archive -Path {}\\Desktop\\submissions\\{} -DestinationPath {}'.format(r_home_dir, entry.name, r_home_dir)
         _, r_stdout, r_stderr = ssh.exec_command(r_cmd)
@@ -113,8 +115,6 @@ def run():
         print(f"Command exited with status: {exit_status}")
         print("Output:", r_stdout.read().decode())
         print("Errors:", r_stderr.read().decode())
-
-        ssh.close()
 
         # スライドのコピー。
         deck_files = []
@@ -160,11 +160,6 @@ def run():
                 if img_regex.match(file.name):
                     shutil.copy2(file, img_dir)
 
-            ssh = paramiko.SSHClient()
-            key = paramiko.RSAKey(filename=key_path)
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(secondary_priv_ip, username='administrator', pkey=key)
-
             r_cmd = f'Get-ChildItem -Path $home\\{root_dir_name} | Select-Object -ExpandProperty Name'
             _, r_stdout, _ = ssh.exec_command(r_cmd)
             r_files = r_stdout.read().decode().splitlines()
@@ -177,16 +172,7 @@ def run():
                              '{}\\{}'.format(img_dir, file))
             sftp.close()
 
-            # リモートPCで展開したディレクトリを削除。
-            r_cmd = f'Remove-Item -Recurse $home\\{root_dir_name}'
-            _, r_stdout, r_stderr = ssh.exec_command(r_cmd)
-            exit_status = r_stdout.channel.recv_exit_status()
-            print(f"Command exited with status: {exit_status}")
-            print("Output:", r_stdout.read().decode())
-            print("Errors:", r_stderr.read().decode())
-
-            ssh.close()
-
+            # 連番画像における欠落事故防止のため名前でソートしたのち改めて連番化する。
             ext = None
             img_list = []
             for file in img_dir.iterdir():
@@ -203,6 +189,16 @@ def run():
             run_command(cmd)
 
         chdir(old_dir)
+
+        # リモートPCで展開したディレクトリを削除。
+        r_cmd = f'Remove-Item -Recurse $home\\{root_dir_name}'
+        _, r_stdout, r_stderr = ssh.exec_command(r_cmd)
+        exit_status = r_stdout.channel.recv_exit_status()
+        print(f"Command exited with status: {exit_status}")
+        print("Output:", r_stdout.read().decode())
+        print("Errors:", r_stderr.read().decode())
+
+        ssh.close()
 
         shutil.rmtree(working_dir)
 
