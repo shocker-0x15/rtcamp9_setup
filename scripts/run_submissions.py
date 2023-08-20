@@ -34,6 +34,8 @@ def run():
 
     img_regex = re.compile(r'\d\d\d\.(png|jpg|jpeg)')
 
+
+
     ssh = paramiko.SSHClient()
     key = paramiko.RSAKey(filename=key_path)
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -184,8 +186,11 @@ def run():
                 Path(file).rename(Path(file).with_name(f'input_{idx:03}{ext}'))
 
             # 動画作成。
-            cmd = ['ffmpeg', '-framerate', str(fps)]
-            cmd += ['-i', f'{img_dir}\\input_%03d{ext}', f'{dst_dir}\\result.mp4']
+            cmd = ['ffmpeg']
+            # Opitions for input
+            cmd += ['-framerate', str(fps), '-i', f'{img_dir}\\input_%03d{ext}']
+            # Options for output
+            cmd += ['-c:v', 'libx264', '-crf', '18', f'{dst_dir}\\result.mp4']
             run_command(cmd)
 
         chdir(old_dir)
