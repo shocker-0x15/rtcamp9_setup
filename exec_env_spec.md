@@ -117,4 +117,4 @@ AWS EC2の基本的な使い方に関しては[AWS101.md](AWS101.md)を参照し
 リポジトリのルートにあるCMakeListsからプロジェクトをビルドできます。gitのsubmoduleを使っているので\
 `git submodule update --init --recursive`\
 を実行してください。\
-またこれらを用いた提出物の例が `usecase2_submission.zip`, `usecase3_submission.zip` になります。
+またこれらを用いた提出物の例が `user2_cpu.zip`, `user3_cpu.zip` になります。

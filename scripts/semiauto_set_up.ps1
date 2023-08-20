@@ -14,7 +14,7 @@ scoop install git
 scoop update
 scoop bucket add extras
 
-scoop install python
+scoop install python@3.11.4
 
 pip install paramiko
 pip install numpy
