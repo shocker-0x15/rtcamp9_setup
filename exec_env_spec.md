@@ -38,6 +38,18 @@
 
 ### 実行環境
 
+EC2インスタンスは以下のいずれか：
+| インスタンスタイプ | CPU | Mem | GPU | ストレージ | インスタンスストア |
+| - | - | - | - | - | - |
+| [g4dn.xlarge](https://aws.amazon.com/jp/ec2/instance-types/g4/) x2 | Cascade Lake<br>4 vCPU | 16 GiB | NVIDIA T4 | EBS | 125 GiB NVMe SSD |
+| [c6i.32xlarge](https://aws.amazon.com/jp/ec2/instance-types/c6i/) x2 | Ice Lake<br>128 vCPU | 256 GiB | N/A | EBS | N/A |
+
+- python 3.11.4がインストールされています。\
+  pythonライブラリとしては数値計算用にnumpy, scipy、画像処理にPillow、SSH操作用にparamikoをインストールしています。
+- GPUインスタンスはOptiX 7.7が動作するドライバー、CUDA 12.1がインストールされています。
+
+### 実行
+
 `<root directory>` を両インスタンスのホームディレクトリに配置します。すなわち `run.ps1` は次の絶対パスに配置されることになります。\
 `C:\Users\Administrator\<root directory>\run.ps1`
 
@@ -53,8 +65,6 @@
 - 制限時間内(300秒)に自動で終了するようにしてください。
 - エラーは標準出力か標準エラー出力かログファイルに出力してください。(ウィンドウやダイアログを出さないでください)
 - インスタンス間通信を除いてインターネット接続をしないで下さい。
-- python 3.11.4がインストールされています。\
-  pythonライブラリとしては数値計算用にnumpy, scipy、画像処理にPillow、SSH操作用にparamikoをインストールしています。
 
 ## 複数インスタンスを試す
 
