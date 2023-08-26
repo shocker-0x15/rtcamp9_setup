@@ -39,7 +39,7 @@
 ### 実行環境
 
 EC2インスタンスは以下のいずれか：
-| インスタンスタイプ | CPU | Mem | GPU | ストレージ | インスタンスストア |
+| インスタンスタイプ | CPU <br/> per instance | Mem <br/> per instance | GPU | ストレージ | インスタンスストア <br/> per instance |
 | - | - | - | - | - | - |
 | [g4dn.xlarge](https://aws.amazon.com/jp/ec2/instance-types/g4/) x2 | Cascade Lake<br>4 vCPU | 16 GiB | NVIDIA T4 | EBS | 125 GiB NVMe SSD |
 | [c6i.32xlarge](https://aws.amazon.com/jp/ec2/instance-types/c6i/) x2 | Ice Lake<br>128 vCPU | 256 GiB | N/A | EBS | N/A |
