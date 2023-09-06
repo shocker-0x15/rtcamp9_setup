@@ -3,6 +3,7 @@ import os
 import shutil
 from pathlib import Path
 import glob
+import time
 import re
 import subprocess
 import zipfile
@@ -123,21 +124,27 @@ def run():
             _, r_stdout, _ = run_remote_command(ssh, r_cmd)
             return set(r_stdout.splitlines())
 
-        # ローカルマシンのレンダリング実行前のファイルリストを取得。
-        org_files = get_local_file_list(working_dir)
-
-        # リモートマシンのレンダリング実行前のファイルリストを取得。
-        r_org_files = get_remote_file_list(f'$home\\{root_dir_name}')
+        # レンダリング実行前のファイルリストを生成。
+        org_files = []
+        for file in ext_files:
+            if not file.endswith('/') and len(Path(file).parts) == 2:
+                org_files.append(Path(file).name)
+        org_files = set(org_files)
 
         # requirements.txtに従ってパッケージインストール。
         if 'requirements.txt' in org_files:
             cmd = ['pip', 'install', '-r', 'requirements.txt']
             run_command(cmd)
-        if 'requirements.txt' in r_org_files:
             run_remote_command(ssh, f'pip install -r $home\\{root_dir_name}\\requirements.txt')
 
+        # リモートマシンの現在時刻を取得。
+        _, r_stdout, _ = run_remote_command(ssh, '$currentTime = Get-Date;$epoch = Get-Date -Year 1970 -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0 -Millisecond 0;$unixTimestamp = [Math]::Round(($currentTime - $epoch).TotalSeconds);$unixTimestamp')
+        r_start_time = int(r_stdout)
+
+        # ローカルマシンの現在時刻を取得。
+        start_time = time.time()
+
         # レンダリング実行。
-        exe_success = True
         cmd = ['powershell', '-File', './run.ps1']
         # cmd = ['./run.sh']
         cmd += [primary_priv_ip, secondary_priv_ip]
@@ -153,7 +160,6 @@ def run():
                 stdout = e.stdout
             if e.stderr:
                 stderr = e.stderr
-            exe_success = False
 
         # 標準出力とエラー出力を書き出す。
         if stdout:
@@ -164,60 +170,72 @@ def run():
                 f.write(stderr)
 
         misc_msg = ''
-        if exe_success:
-            # fpsを読み取る。
-            if (working_dir / 'fps.txt').exists():
-                with open('fps.txt', 'r') as f:
-                    fps = int(f.read())
+
+        # fpsを読み取る。
+        if (working_dir / 'fps.txt').exists():
+            with open('fps.txt', 'r') as f:
+                fps = int(f.read())
+        else:
+            misc_msg += 'fps.txt: not found\n'
+            fps = 60
+
+        # ローカルマシンのレンダリング実行後のファイルリストを取得。
+        files = get_local_file_list(working_dir)
+        new_files = files - org_files
+
+        # リモートマシンのレンダリング実行後のファイルリストを取得。
+        r_files = get_remote_file_list(f'$home\\{root_dir_name}')
+        r_new_files = r_files - org_files
+
+        # ローカルマシンで出力された画像をコピー。
+        for file in new_files:
+            src_file = working_dir / file
+            if img_regex.match(file):
+                if (src_file.stat().st_mtime - start_time) < 310:
+                    shutil.copy2(src_file, img_dir)
             else:
-                misc_msg += 'fps.txt: not found\n'
-                fps = 60
+                shutil.copy2(src_file, dst_local_others_dir)
 
-            # ローカルマシンのレンダリング実行後のファイルリストを取得。
-            files = get_local_file_list(working_dir)
-            new_files = files - org_files
+        # リモートマシンで出力された画像をコピー。
+        sftp = ssh.open_sftp()
+        for file in r_new_files:
+            remote_path = '{}\\{}\\{}'.format(r_home_dir, root_dir_name, file)
+            if img_regex.match(file):
+                remote_stat = sftp.stat(remote_path)
+                if (remote_stat.st_mtime - start_time) < 310:
+                    local_path = '{}\\{}'.format(img_dir, file)
+                    sftp.get(remote_path, local_path)
+                    os.utime(local_path, (remote_stat.st_atime, remote_stat.st_mtime))
+            else:
+                sftp.get(remote_path, '{}\\{}'.format(dst_remote_others_dir, file))
+        sftp.close()
 
-            # リモートマシンのレンダリング実行後のファイルリストを取得。
-            r_files = get_remote_file_list(f'$home\\{root_dir_name}')
-            r_new_files = r_files - r_org_files
+        # 連番画像における欠落事故防止のため名前でソートしたのち改めて連番化する。
+        ext = None
+        img_list = []
+        for file in img_dir.iterdir():
+            if file.is_file() and ext is None:
+                ext = file.suffix
+            img_list.append(str(file))
+        img_list.sort()
+        for idx, file in enumerate(img_list):
+            old_name = Path(file)
+            new_name = old_name.with_name(f'input_{idx:03}{ext}')
+            if new_name.exists():
+                new_name.unlink()
+            old_name.rename(new_name)
 
-            # ローカルマシンで出力された画像をコピー。
-            for file in new_files:
-                if img_regex.match(file):
-                    shutil.copy2(working_dir / file, img_dir)
-                else:
-                    shutil.copy2(working_dir / file, dst_local_others_dir)
-
-            # リモートマシンで出力された画像をコピー。
-            sftp = ssh.open_sftp()
-            for file in r_new_files:
-                if img_regex.match(file):
-                    sftp.get('{}\\{}\\{}'.format(r_home_dir, root_dir_name, file),
-                             '{}\\{}'.format(img_dir, file))
-                else:
-                    sftp.get('{}\\{}\\{}'.format(r_home_dir, root_dir_name, file),
-                             '{}\\{}'.format(dst_remote_others_dir, file))
-            sftp.close()
-
-            # 連番画像における欠落事故防止のため名前でソートしたのち改めて連番化する。
-            ext = None
-            img_list = []
-            for file in img_dir.iterdir():
-                if file.is_file() and ext is None:
-                    ext = file.suffix
-                img_list.append(str(file))
-            img_list.sort()
-            for idx, file in enumerate(img_list):
-                Path(file).rename(Path(file).with_name(f'input_{idx:03}{ext}'))
-
+        try:
             if len(img_list) > 0:
                 # 動画作成。
                 cmd = ['ffmpeg']
                 # Opitions for input
                 cmd += ['-framerate', str(fps), '-i', f'{img_dir}\\input_%03d{ext}']
                 # Options for output
-                cmd += ['-c:v', 'libx264', '-crf', '18', f'{dst_dir}\\result.mp4']
+                cmd += ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', f'{dst_dir}\\result.mp4']
                 run_command(cmd)
+        except Exception as e:
+            misc_msg += 'ffmpeg error.\n'
 
         if len(img_list) == 0:
             misc_msg += 'No images.\n'
